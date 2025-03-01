@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+/*
+ *  STYLE 16
+ */
+
+::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0);
+  background-color: #000000;
+  border-radius: 7%;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 5px;
+  background-color: #00000000;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  background-color: #000000;
+  background-image: -webkit-linear-gradient(
+    top,
+    #ffc400 0%,
+    #ffa268 50%,
+    #ffa268 51%,
+    #ff6200 100%
+  );
+}
+
+
+
+
