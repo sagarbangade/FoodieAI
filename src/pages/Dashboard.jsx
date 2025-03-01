@@ -6,9 +6,10 @@ const Dashboard = () => {
   return (
     <>
       <Navbar />
-      <ChatBot />
+      <div className="h-screen">
+        <ChatBot />
+      </div>
       {/* <AudioVisualizer /> */}
-      
     </>
   );
 };

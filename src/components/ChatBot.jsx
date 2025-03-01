@@ -2,8 +2,9 @@ import { useState, useEffect, useRef } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Menu, X as XIcon, Send, Plus, Trash2, Mic } from "lucide-react";
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY
+import { X as XIcon, Send, Plus, Trash2, Mic, Menu } from "lucide-react";
+import Visualizer from "./Visualizer";
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
 // Add these constants at the top of your file after the genAI initialization
@@ -102,18 +103,14 @@ async function textToSpeech(text) {
       }
 
       const audioBlob = new Blob([arrayBuffer], { type: "audio/mp3" });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-      await audio.play();
-      audio.onended = () => URL.revokeObjectURL(audioUrl);
+      return audioBlob; // ✅ Return the Blob instead of playing it here
     } else {
       console.error("TTS API Error:", data.error);
+      return null;
     }
   } catch (error) {
     console.error("Error with text-to-speech:", error);
-    // Fallback to browser's TTS if Google Cloud fails
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
+    return null;
   }
 }
 
@@ -269,6 +266,8 @@ function ChatBot() {
     setCurrentChatId(chatId);
   };
 
+  const [audioBlob, setAudioBlob] = useState(null); // ✅ Add state to store the audio
+
   const sendMessage = async () => {
     if (!input.trim() || !currentChatId) return;
 
@@ -290,10 +289,10 @@ function ChatBot() {
       const result = await chatSession.sendMessage(input);
       const responseText = result.response.text();
 
-      // Start text-to-speech as soon as we get the response
-      await textToSpeech(responseText);
+      // ✅ Get audioBlob from TTS and update state
+      const generatedAudioBlob = await textToSpeech(responseText);
+      setAudioBlob(generatedAudioBlob); // ✅ Pass audioBlob to Visualizer
 
-      // Typing animation
       let fullResponse = "";
       setMessages((prevMessages) => [
         ...prevMessages,
@@ -328,7 +327,7 @@ function ChatBot() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="relative flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden">
       {isSidebarVisible && (
         <div
           className="fixed inset-0 bg-black/50 lg:hidden z-20"
@@ -400,8 +399,20 @@ function ChatBot() {
           </div>
         </div>
       </aside>
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <Visualizer audioBlob={audioBlob} />
+      </div>
 
       <main className="flex-1 flex flex-col h-screen relative">
+      <header className="h-16 flex items-center px-4 border-b ">
+          <button
+            onClick={() => setIsSidebarVisible(true)}
+            className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md mr-2"
+          >
+            <Menu className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+          </button>
+          
+        </header>
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((msg, index) => (
             <div
@@ -413,7 +424,7 @@ function ChatBot() {
               <div
                 className={`max-w-[80%] lg:max-w-[70%] rounded-2xl px-4 py-2 ${
                   msg.role === "user"
-                    ? "bg-blue-600 text-white rounded-br-none"
+                    ? "bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-white rounded-bl-none"
                     : "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-bl-none"
                 }`}
               >
@@ -439,7 +450,7 @@ function ChatBot() {
                 e.key === "Enter" && !e.shiftKey && sendMessage()
               }
               placeholder="Type your message here..."
-              className="flex-grow p-2 border rounded-md"
+              className="flex-grow p-2 border rounded-md text-white"
             />
             <button
               onClick={() => sendMessage()}
