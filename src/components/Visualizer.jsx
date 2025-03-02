@@ -4,6 +4,10 @@ const Visualizer = ({ audioBlob }) => {
   const visualizerRef = useRef(null);
   const audioRef = useRef(null);
   const sceneRef = useRef(null);
+  const audioContextRef = useRef(null);
+  const analyserRef = useRef(null);
+  const sourceRef = useRef(null);
+  const animationRef = useRef(null);
 
   // Effect for initial script loading
   useEffect(() => {
@@ -22,40 +26,72 @@ const Visualizer = ({ audioBlob }) => {
       await new Promise(resolve => {
         script2.onload = resolve;
       });
-      
-      // Now scripts are loaded, we can reference them
-      audioRef.current = new Audio();
     };
     
     loadScripts();
     
     // Cleanup on unmount
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+      cleanupAudio();
       clearScene();
     };
   }, []);
   
+  const cleanupAudio = () => {
+    // Cancel any ongoing animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+    
+    // Disconnect and clean up audio nodes
+    if (sourceRef.current) {
+      sourceRef.current.disconnect();
+      sourceRef.current = null;
+    }
+    
+    if (analyserRef.current) {
+      analyserRef.current.disconnect();
+      analyserRef.current = null;
+    }
+    
+    // Close audio context
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close().catch(e => console.log("Error closing AudioContext:", e));
+      audioContextRef.current = null;
+    }
+    
+    // Clean up audio element
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
+      audioRef.current = null;
+    }
+  };
+  
   // Effect for handling audioBlob changes
   useEffect(() => {
-    if (!audioBlob || !audioRef.current) return;
+    if (!audioBlob) return;
     
+    // Clean up previous audio resources
+    cleanupAudio();
+    clearScene();
+    
+    // Create new audio element
+    audioRef.current = new Audio();
     const audioURL = URL.createObjectURL(audioBlob);
     audioRef.current.src = audioURL;
     
-    clearScene();
+    // Start visualization with new audio
     startVis();
     
     audioRef.current.play();
-    audioRef.current.onended = () => URL.revokeObjectURL(audioURL);
+    audioRef.current.onended = () => {
+      URL.revokeObjectURL(audioURL);
+    };
     
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-      }
+      cleanupAudio();
     };
   }, [audioBlob]);
   
@@ -79,15 +115,20 @@ const Visualizer = ({ audioBlob }) => {
     const noise = new SimplexNoise();
     const audio = audioRef.current;
     
-    const context = new AudioContext();
-    const src = context.createMediaElementSource(audio);
-    const analyser = context.createAnalyser();
-    src.connect(analyser);
-    analyser.connect(context.destination);
-    analyser.fftSize = 512;
-    const bufferLength = analyser.frequencyBinCount;
+    // Create new AudioContext
+    audioContextRef.current = new AudioContext();
+    const context = audioContextRef.current;
+    
+    // Create and connect audio nodes
+    sourceRef.current = context.createMediaElementSource(audio);
+    analyserRef.current = context.createAnalyser();
+    sourceRef.current.connect(analyserRef.current);
+    analyserRef.current.connect(context.destination);
+    analyserRef.current.fftSize = 512;
+    const bufferLength = analyserRef.current.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     
+    // Set up THREE.js scene
     const scene = new THREE.Scene();
     sceneRef.current = scene;
     
@@ -128,9 +169,9 @@ const Visualizer = ({ audioBlob }) => {
     window.addEventListener("resize", handleResize);
     
     function render() {
-      if (!analyser) return;
+      if (!analyserRef.current) return;
       
-      analyser.getByteFrequencyData(dataArray);
+      analyserRef.current.getByteFrequencyData(dataArray);
       
       const lowerHalf = dataArray.slice(0, dataArray.length / 2 - 1);
       const upperHalf = dataArray.slice(
@@ -155,7 +196,7 @@ const Visualizer = ({ audioBlob }) => {
         modulate(upperAvgFr, 0, 1, 0, 4)
       );
       
-      requestAnimationFrame(render);
+      animationRef.current = requestAnimationFrame(render);
       renderer.render(scene, camera);
     }
     
@@ -203,6 +244,9 @@ const Visualizer = ({ audioBlob }) => {
     // Return cleanup for this specific visualization
     return () => {
       window.removeEventListener("resize", handleResize);
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
     };
   };
   
