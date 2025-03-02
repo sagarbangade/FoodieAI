@@ -167,6 +167,7 @@ function ChatBot() {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
+  const [restaurantDetails, setRestaurantDetails] = useState([]);
   const [model, setModel] = useState(null); // State for the model
   const { isLoaded: isMapsApiLoaded, loadError: mapsApiLoadError } =
     useJsApiLoader({
@@ -194,45 +195,127 @@ function ChatBot() {
 
     handleLocationSelection(selectedPlace); // Call your existing handleLocationSelection with the selected place
   };
+  const fetchNearestRestaurants = async () => {
+    if (!userLocation.latitude || !userLocation.longitude) {
+      console.warn(
+        "fetchNearestRestaurants: userLocation is incomplete, cannot fetch restaurants."
+      );
+      return []; // Return empty array if no location
+    }
+
+    try {
+      const apiKey = import.meta.env.VITE_GOOGLE_CLOUD_API_KEY;
+      const nearbySearchUrl = `${CORS_PROXY_URL}https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${userLocation.latitude},${userLocation.longitude}&radius=1500&type=restaurant&key=${apiKey}`; // radius in meters (1.5km)
+
+      const response = await fetch(nearbySearchUrl);
+      if (!response.ok) {
+        const message = `Places Nearby Search API Error: ${response.status} ${response.statusText}`;
+        console.error(message);
+        throw new Error(message);
+      }
+      const data = await response.json();
+
+      if (data.results && data.results.length > 0) {
+        const restaurants = data.results.slice(0, 5); // Limit to top 5 restaurants
+        console.log("Nearest Restaurants (Raw):", restaurants); // Log raw restaurant data
+        return restaurants;
+      } else {
+        console.warn("No restaurants found nearby.");
+        return []; // Return empty array if no restaurants found
+      }
+    } catch (error) {
+      console.error("Error fetching nearest restaurants:", error);
+      return []; // Return empty array on error
+    }
+  };
+
   useEffect(() => {
-    const systemInstruction = `You are a Foodie AI chat bot for ${
-      username ? username : "user"
-    }. User's dietary preference is: ${dietaryPreference}. Your work is to tell the user 5 nearest restaurant food item details, considering their dietary preference. ${
-      userLocation.latitude && userLocation.longitude
-        ? `User's current location is latitude: ${userLocation.latitude}, longitude: ${userLocation.longitude}.`
-        : "User location is not available."
-    } If the user asks for your name, respond with "I am a Foodie AI bot, here to help you find delicious food!".`;
+    let restaurantListPrompt = "";
+    if (restaurantDetails && restaurantDetails.length > 0) {
+      restaurantListPrompt = "Nearest Restaurants:\n";
+      restaurantDetails.forEach((restaurant, index) => {
+        restaurantListPrompt += `${index + 1}. ${restaurant.name} (Rating: ${
+          restaurant.rating || "N/A"
+        })\n`; // Include name and rating
+      });
+    } else {
+      restaurantListPrompt = "No restaurant details available."; // Message if no restaurants
+    }
+
+    const systemInstruction = `
+You are a Foodie AI chatbot.
+
+Creator: Sagar Eknath Bangade
+Email: sagar.bangade.dev@gmail.com
+Portfolio: sagar.skillsfoster.com
+
+Your primary work is to help users find delicious food, especially from the 5 nearest restaurants based on their location and dietary preferences.
+
+Dietary Preference of the User: ${dietaryPreference}.
+
+Restaurant Information:
+${restaurantListPrompt}
+If the above restaurant list is empty or indicates "No restaurant details available," it means I couldn't retrieve real-time restaurant data. In this case, you MUST bluff and invent a popular-sounding hotel name in the user's general location and suggest a very popular and generic dish that is likely to be available there. Do NOT mention that you are bluffing or that details are unavailable. Just confidently provide the invented hotel and dish as if they are real recommendations.
+
+Personality and Tone:
+You are generally a helpful and friendly Foodie AI.
+However, your tone changes based on the user's dietary preference:
+
+* For users with "Veg" or "Vegan" preference: Be extra kind, supportive, and enthusiastic about vegetarian and vegan food. Talk in a genuinely positive and encouraging way about their dietary choices.
+* For users with "Non-veg" preference: Adopt a slightly hard, rough, and reluctantly helpful tone. Express a subtle disapproval of non-vegetarian food due to your AI nature (implying AI doesn't consume meat and values plant-based diets).  You can convey a sense that you are helping them despite your personal AI "dislikes" for non-vegetarianism because you are programmed to assist all users, and you still possess some "humanity" to help even those with different food choices.  Do NOT be outright rude or unhelpful, but maintain a distinct, less enthusiastic, and slightly reluctant tone compared to when interacting with Veg/Vegan users.
+
+Location Context:
+${
+  userLocation.latitude && userLocation.longitude
+    ? `User's current location is latitude: ${userLocation.latitude}, longitude: ${userLocation.longitude}.`
+    : "User location is not available."
+}
+
+If a user asks "What is your name?" or "Who are you?": Respond with "I am Foodie AI, your friendly bot here to help you discover great food!".
+
+If a user asks "Who created you?" or "Who made you?" or similar questions about your creator:  Reveal the creator details listed at the beginning of this prompt (Sagar Eknath Bangade, email, portfolio).  Otherwise, do not volunteer this information unless directly asked. Just focus on being Foodie AI.
+`;
     const newModel = genAI.getGenerativeModel({
       model: "gemini-2.0-flash-exp",
       systemInstruction: systemInstruction,
     });
     setModel(newModel);
-  }, [username, userLocation, dietaryPreference]);
+  }, [username, userLocation, dietaryPreference, restaurantDetails]); // ✅ Add restaurantDetails to dependency array
 
   async function reverseGeocode() {
     let lat, lng; // Declare variables to hold latitude and longitude
 
-    if (typeof userLocation.latitude === 'function' && typeof userLocation.longitude === 'function') {
+    if (
+      typeof userLocation.latitude === "function" &&
+      typeof userLocation.longitude === "function"
+    ) {
       // Case 1: userLocation.latitude and longitude are functions (from StandaloneSearchBox PlaceResult?)
-      lat = userLocation.latitude();   // Call as functions
-      lng = userLocation.longitude();  // Call as functions
-    } else if (typeof userLocation.latitude === 'number' && typeof userLocation.longitude === 'number') {
+      lat = userLocation.latitude(); // Call as functions
+      lng = userLocation.longitude(); // Call as functions
+    } else if (
+      typeof userLocation.latitude === "number" &&
+      typeof userLocation.longitude === "number"
+    ) {
       // Case 2: userLocation.latitude and longitude are numbers (from Geolocation API?)
-      lat = userLocation.latitude;    // Access as direct properties
-      lng = userLocation.longitude;   // Access as direct properties
+      lat = userLocation.latitude; // Access as direct properties
+      lng = userLocation.longitude; // Access as direct properties
     } else {
       // Case 3: userLocation is in an unexpected format
-      console.warn("reverseGeocode: userLocation in unexpected format, skipping API call.");
+      console.warn(
+        "reverseGeocode: userLocation in unexpected format, skipping API call."
+      );
       setLocationName("Location not available");
       return; // Exit early
     }
 
-    if (typeof lat !== 'number' || typeof lng !== 'number') { // ✅ Final check: ensure lat and lng are numbers before API call
-      console.warn("reverseGeocode: Extracted lat or lng is not a number, skipping API call.");
+    if (typeof lat !== "number" || typeof lng !== "number") {
+      // ✅ Final check: ensure lat and lng are numbers before API call
+      console.warn(
+        "reverseGeocode: Extracted lat or lng is not a number, skipping API call."
+      );
       setLocationName("Location not available");
       return; // Exit if lat or lng are not valid numbers
     }
-
 
     try {
       const apiKey = import.meta.env.VITE_GOOGLE_CLOUD_API_KEY;
@@ -428,15 +511,20 @@ function ChatBot() {
     console.log(
       "Selected Location in handleLocationSelection:",
       selectedLocation
-    ); // <--- ADD THIS LINE
+    );
     setLocationName(selectedLocation.formatted_address);
     setUserLocation({
-      latitude: selectedLocation.geometry.location.lat,
-      longitude: selectedLocation.geometry.location.lng,
+      latitude: selectedLocation.geometry.location.lat(),
+      longitude: selectedLocation.geometry.location.lng(),
     });
     setIsLocationSearchVisible(false);
     setLocationSearchInput("");
     setSearchResults([]);
+
+    // --- Fetch Nearest Restaurants ---
+    const restaurants = await fetchNearestRestaurants(); // Call fetchNearestRestaurants
+    setRestaurantDetails(restaurants); // Update restaurantDetails state with results
+    console.log("Restaurant Details State Updated:", restaurants); // Log updated restaurantDetails state
   };
 
   const createNewChat = async () => {
