@@ -1,194 +1,130 @@
+# Foodie AI Chatbot 🍔🍕🌮
 
-# ShinobiPath - Travel Itinerary Planner
+[![Demo Video](link-to-your-demo-video-placeholder.png)](LINK-TO-YOUR-DEMO-VIDEO)
+[**Demo Website (Live)**](LINK-TO-YOUR-DEMO-WEBSITE)
 
-## Introduction
+<!-- Replace the image link above with a thumbnail image for your demo video, and replace LINK-TO-YOUR-DEMO-VIDEO with the actual YouTube or video platform link.
+     Replace LINK-TO-YOUR-DEMO-WEBSITE with the link to your deployed website (if you have one).
+     If you don't have a demo video or website yet, you can leave these placeholders and add them later. -->
 
-ShinobiPath is a comprehensive travel itinerary planner designed to empower users to create, manage, and share detailed travel plans.  This application helps users organize every aspect of their trips, from destination research and scheduling activities to budgeting and collaborating with travel companions. ShinobiPath aims to make travel planning as seamless and enjoyable as the journey itself, providing a robust suite of tools within a user-friendly interface.
+## Project Overview
 
-## Project Type
+Foodie AI Chatbot is a conversational web application designed to help users discover delicious food options, focusing on nearby restaurants and personalized dietary preferences. Powered by Google's advanced AI models and location services, Foodie AI acts as your friendly, food-savvy assistant, ready to provide recommendations, even when real-time data is unavailable.
 
-Frontend with Firebase Backend
+**Key Features:**
 
+*   **AI-Powered Conversations:**  Engages in natural language conversations using Google's Gemini AI model, providing helpful and relevant responses to user queries about food.
+*   **Nearest Restaurant Recommendations:** Suggests the top 5 nearest restaurants based on the user's current location, leveraging Google Maps Platform APIs.
+*   **Dietary Preference Selection:** Allows users to easily select their dietary preference (Vegetarian, Non-vegetarian, Vegan) via a visually appealing toggle interface, influencing restaurant recommendations and chatbot tone.
+*   **Location Awareness:**
+    *   Automatically detects the user's current location using the browser's Geolocation API.
+    *   Displays the user's location name in the header, fetched using Google Maps Geocoding API.
+    *   Provides a search box powered by Google Maps Places Autocomplete to enable users to easily change their location and explore restaurants in different areas.
+*   **Voice Input & Output:**
+    *   Supports voice input using Google Cloud Speech-to-Text API, allowing users to speak their queries.
+    *   Provides voice output for chatbot responses using Google Cloud Text-to-Speech API, enhancing accessibility and user experience.
+    *   Includes a visualizer to accompany voice output.
+*   **Chat History Management:**  Maintains chat history within the browser's local storage, allowing users to revisit past conversations across sessions.
+*   **Themed UI:** Features a responsive and visually engaging user interface with themed toggle buttons for dietary preferences (Heavenly Veg/Vegan, Hellish Non-veg).
+*   **Bluffing Capability:** When real-time restaurant data is unavailable, the AI is designed to confidently "bluff" by inventing plausible restaurant details, ensuring a seamless user experience even in data-scarce scenarios.
+*   **Dynamic Tone:** The chatbot's conversational tone adapts based on the user's dietary preference, being more enthusiastic for Veg/Vegan users and adopting a subtly reluctant but helpful tone for Non-veg users.
+*   **Creator Information:**  Creator details (Sagar Eknath Bangade) are revealed when users inquire about the chatbot's origin.
 
+## Technologies Used
 
-## Deployed App
-Frontend: [**[Frontend Deployed Link Here]**](https://shinobi-path-itinerary-planner.vercel.app/) - 
-Backend: Firebase - *Backend services are provided by Firebase.*
-Database: Firebase Firestore - *Database is hosted on Firebase Firestore.*
+*   **Frontend:**
+    *   [React.js](https://reactjs.org/) - JavaScript library for building user interfaces.
+    *   [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS framework for styling.
+    *   [@react-google-maps/api](https://react-google-maps-api.netlify.app/) - React wrapper for Google Maps JavaScript API.
+    *   [lucide-react](https://lucide.dev/) - Beautifully simple icons.
+    *   [react-markdown](https://github.com/remarkjs/react-markdown) - React component to render Markdown.
+    *   [remark-gfm](https://github.com/remarkjs/remark-gfm) - Remark plugin to support GitHub Flavored Markdown.
 
-## Directory Structure
+*   **Backend & AI:**
+    *   [Google Generative AI (Gemini API)](https://ai.google.dev/) - For conversational AI capabilities.
+    *   [Google Cloud Text-to-Speech API](https://cloud.google.com/text-to-speech) - For voice output.
+    *   [Google Cloud Speech-to-Text API](https://cloud.google.com/speech-to-text) - For voice input.
+    *   [Google Maps Platform APIs](https://developers.google.com/maps/apis-by-context/platform)
+        *   [Places API (Autocomplete, Nearby Search, Place Details)](https://developers.google.com/maps/documentation/places/web-service/overview) - For location search and restaurant data.
+        *   [Geocoding API](https://developers.google.com/maps/documentation/geocoding/overview) - For reverse geocoding (location name from coordinates).
 
-```
-shinobipath-itinerary-planner/
-├── src/
-│   ├── components/        # Reusable React components (Navbar, Footer, Chatbot, etc.)
-│   ├── contexts/          # React Contexts for state management (ChatbotContext, ItineraryDataContext)
-│   ├── firebase/          # Firebase configuration and utility functions
-│   ├── pages/             # Main application pages (Home, Login, Dashboard, ItineraryPlanner, Map, etc.)
-│   ├── routes/            # Route definitions (ProtectedRoute)
-│   ├── scss/              # SCSS Stylesheets (e.g., chat.css)
-│   ├── assets/            # Static assets (images, logos)
-│   ├── App.js             # Main application component
-│   ├── index.css          # Global CSS styles
-│   ├── index.js           # Entry point of the application
-│   └── ...
-├── public/            # Public assets (logo, images for landing page)
-├── vite.config.js       # Vite configuration file
-├── package.json
-├── package-lock.json
-├── readme.md            # This README file
-└── ...
-```
+*   **Authentication (Optional - if used in your demo):**
+    *   [Firebase Authentication](https://firebase.google.com/docs/auth) - For user sign-in with Google (if implemented).
 
-## Video Walkthrough of the project
+*   **Other:**
+    *   [Vite](https://vitejs.dev/) - For fast development server and build tool.
+    *   [dotenv](https://www.npmjs.com/package/dotenv) (via Vite) - For managing environment variables.
 
-[**[Project Feature Walkthrough Video Link Here]**](https://youtu.be/C7m0yvJqfyg) - 
-
-## Video Walkthrough of the codebase
-
-[**[Codebase Walkthrough Video Link Here]**](https://youtu.be/KgsMYd_JAO4) - 
-
-## Features
-
-- **Itinerary Planning:** Create, edit, and manage travel itineraries with titles, descriptions, dates, budgets, and categories.
-- **Destination Management:** Add multiple destinations to itineraries, including location search using Google Maps, dates, activities, expenses, and reminders. Reorder destinations using drag and drop.
-- **Interactive Maps:** Visualize itineraries and destinations on integrated Google Maps, including location markers and distance calculations between destinations.
-- **Budgeting & Expense Tracking:** Set budgets for itineraries and track expenses and activity costs for each destination. Visualize budget vs. expenses with charts.
-- **Activity & Reminder Scheduling:** Plan activities and set reminders for each destination with dates and times.
-- **Collaborative Planning:** Share itineraries with other users for collaborative planning and editing.
-- **User Authentication:** Secure user accounts with Google Sign-in via Firebase Authentication.
-- **Dashboard Overview:**  Get a summary of travel activity, including upcoming trips, completed trips, total expenses, visited locations, and key travel statistics visualized through charts and maps.
-- **AI-Powered Chatbot Assistant:**  Integrated chatbot powered by Google Gemini API to assist users with travel planning and answer itinerary-related questions.
-- **User Profile Management:**  Edit user profile information including personal details, social media links, emergency contacts, travel preferences, and passport information.
-- **Calendar Integration:** Calendar view to visualize itinerary dates and events, helping users see their plans in a timeline format.
-- **Printable Itineraries:** Generate printable versions of itineraries for offline access and sharing.
-- **Search & Filtering:** Search and filter itineraries by title, description, and category.
-
-## Design Decisions or Assumptions
-
-- **React Frontend:** The application is built using React for a dynamic and responsive user interface.
-- **Material UI (MUI):**  Utilizes Material UI for consistent UI components and styling, providing a professional and accessible design.
-- **Firebase Backend:** Leverages Firebase for authentication (Google Sign-in), Firestore database for storing user data and itineraries, and Firebase Storage for profile picture uploads. This choice simplifies backend development and deployment.
-- **Google Maps Platform:**  Integrates Google Maps APIs for map display, location search (Places API), and distance calculations (Distance Matrix API), providing rich location-based functionality.
-- **Google Gemini API for Chatbot:** Implements Google's Gemini AI model to provide intelligent and context-aware assistance to users for travel planning within the application.
-- **Context API for State Management:** React's Context API is used for managing application-wide state, such as chatbot state and itinerary data, promoting efficient data sharing between components.
-- **Drag and Drop Interface:** Implements drag and drop functionality using `react-beautiful-dnd` to allow users to easily reorder destinations and items within itineraries, enhancing user experience.
-- **Responsive Design:** The application is designed to be responsive and accessible across different devices (desktop and mobile), using media queries and responsive UI frameworks like Material UI and Tailwind CSS.
-
-## Installation & Getting started
-
-To run this project locally, follow these steps:
+## Setup Instructions (Local Development)
 
 1.  **Clone the repository:**
 
     ```bash
-    git clone [repository-url] # Replace with your repository URL
-    cd shinobipath-itinerary-planner
+    git clone [repository-url]
+    cd [foodie-ai-chatbot-folder]
     ```
+
+    *(Replace `[repository-url]` with the actual URL of your GitHub repository and `[foodie-ai-chatbot-folder]` with the name of the cloned folder.)*
 
 2.  **Install dependencies:**
 
     ```bash
-    npm install
+    npm install  # or yarn install
     ```
 
-3.  **Set up Firebase:**
-    *   Create a Firebase project on the [Firebase Console](https://console.firebase.google.com/).
-    *   Enable Google Sign-in in your Firebase project's Authentication settings.
-    *   Create a Firestore database in your Firebase project.
-    *   Obtain your Firebase project configuration (API key, authDomain, projectId, etc.) from the Firebase console (Project settings -> General -> Web apps).
-    *   Replace the placeholder values in `src/firebase/firebaseConfig.js` with your Firebase project configuration.
+3.  **Create `.env.local` file:**
 
-4.  **Set up Google Maps API Key:**
-    *   Obtain a Google Maps API key with the Places API, Maps JavaScript API, and Distance Matrix API enabled from the [Google Cloud Console](https://console.cloud.google.com/).
-    *   Replace the placeholder API key value `"YOUR_API_KEY"` in `src/pages/Map.js` and other components using Google Maps APIs with your actual Google Maps API key.
-    *   Ensure billing is enabled for your Google Cloud project as required by Google Maps Platform.
+    In the project root directory, create a file named `.env.local` and add your API keys and Firebase configuration variables.  **Ensure you replace the placeholder values with your actual API keys from Google Cloud Console and Firebase Console.**
 
-5.  **Set up Google Gemini API Key:**
-    *   Obtain a Google Gemini API key from [Google AI Studio](https://makersuite.google.com/).
-    *   Replace the placeholder API key value `"YOUR_API_KEY"` in `src/contexts/ChatbotContext.jsx` and `src/components/Chatbot.jsx` with your actual Gemini API key.
+    ```
+    VITE_GEMINI_API_KEY='YOUR_GEMINI_API_KEY'
+    VITE_GOOGLE_CLOUD_API_KEY='YOUR_GOOGLE_CLOUD_API_KEY'
 
-6.  **Start the development server:**
+    # Firebase Configuration (if using Firebase Authentication)
+    VITE_FIREBASE_API_KEY="YOUR_FIREBASE_API_KEY"
+    VITE_FIREBASE_AUTH_DOMAIN="YOUR_FIREBASE_AUTH_DOMAIN"
+    VITE_FIREBASE_PROJECT_ID="YOUR_FIREBASE_PROJECT_ID"
+    VITE_FIREBASE_STORAGE_BUCKET="YOUR_FIREBASE_STORAGE_BUCKET"
+    VITE_FIREBASE_MESSAGING_SENDER_ID="YOUR_FIREBASE_MESSAGING_SENDER_ID"
+    VITE_FIREBASE_APP_ID="YOUR_FIREBASE_APP_ID"
+    VITE_FIREBASE_MEASUREMENT_ID="YOUR_FIREBASE_MEASUREMENT_ID"
+
+    # Google Cloud Service Account Keys (if needed for backend services, adjust as necessary)
+    # VITE_GOOGLE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY\n-----END PRIVATE KEY-----\n"
+    # VITE_GOOGLE_CLIENT_EMAIL="YOUR_SERVICE_ACCOUNT_CLIENT_EMAIL"
+    ```
+
+    **Important:**  **Never commit your `.env.local` file to version control** as it contains sensitive API keys. It's included in `.gitignore` to prevent accidental commits.
+
+4.  **Run the development server:**
 
     ```bash
-    npm run dev
+    npm run dev  # or yarn dev
     ```
 
-7.  Open your browser and navigate to `http://localhost:5173` (or the address shown in your terminal).
+    Open your browser and navigate to `http://localhost:5173` (or the address shown in your terminal) to access the Foodie AI Chatbot.
 
-## Usage
+## Deployment (Optional)
 
-1.  **Login:**  Use the "Log in" button on the landing page or navigate to `/login` to sign in with your Google account.
-2.  **Dashboard:** After logging in, you will be redirected to the dashboard (`/dashboard`), where you can see a summary of your travel plans, upcoming reminders, and travel statistics.
-3.  **Itinerary Planner:** Navigate to the "Travel Planner" link in the navigation bar or go to `/itineraries` to access the itinerary planner.
-    *   **Create a New Itinerary:** Click the "New" button to create a new itinerary. Fill in the basic information, destinations, and other details in the modal form.
-    *   **Edit/View Itineraries:** Your itineraries are displayed as cards. Click "Edit" to modify an itinerary, "View Details" to see a detailed view, or "Delete" to remove it.
-    *   **Manage Destinations:** Within an itinerary, add, edit, delete, and reorder destinations. For each destination, you can add activities, expenses, and reminders. Use the Google Maps search to select locations for your destinations.
-    *   **Collaborate:** Enable collaboration to share your itinerary with others by adding their email addresses.
-4.  **Map View:** Access the map (`/map`) from the navigation bar to see a full-screen map. You can search for locations and place markers. In the itinerary view, maps show destinations for the selected itinerary.
-5.  **Chatbot Assistant:** Click the chat icon in the bottom right corner to open the Travel AI Assistant. Ask questions or request assistance with planning your itinerary.
-6.  **User Profile:** Access and edit your user profile by clicking on your profile icon or name in the navigation bar.
+To deploy your Foodie AI Chatbot to the web, you can use platforms like:
 
-Include screenshots here to visually guide users through the application's usage.
+*   [Netlify](https://www.netlify.com/)
+*   [Vercel](https://vercel.com/)
+*   [Firebase Hosting](https://firebase.google.com/docs/hosting)
 
-## Credentials
+These platforms offer easy deployment for React applications, and you can configure environment variables in their settings to securely manage your API keys in a production environment. Refer to the documentation of your chosen platform for specific deployment instructions.
 
-For demonstration purposes, you can use Google Sign-in with any Google account to access the application. There are no specific pre-defined user credentials required.
+## Credits
 
-## APIs Used
+**Created by: Sagar Eknath Bangade**
 
--   **Firebase:**
-    -   [Firebase Authentication](https://firebase.google.com/docs/auth): For user authentication (Google Sign-in).
-    -   [Firebase Firestore](https://firebase.google.com/docs/firestore):  For NoSQL database to store user data, itineraries, and chat messages.
-    -   [Firebase Storage](https://firebase.google.com/docs/storage): For storing user profile pictures.
--   **Google Maps Platform:**
-    -   [Places API](https://developers.google.com/maps/documentation/places/web-service/overview): For location search and place details.
-    -   [Maps JavaScript API](https://developers.google.com/maps/documentation/javascript/overview): For embedding interactive maps in the application.
-    -   [Distance Matrix API](https://developers.google.com/maps/documentation/distance-matrix/overview): For calculating distances and travel times between destinations.
--   **Google Gemini API:**
-    -   [Generative AI API](https://ai.google.dev/): For powering the Travel AI Assistant chatbot.
+*   Email: [sagar.bangade.dev@gmail.com](mailto:sagar.bangade.dev@gmail.com)
+*   Portfolio: [sagar.skillsfoster.com](https://sagar.skillsfoster.com)
 
-## API Endpoints
+## License
 
-As this is primarily a frontend application with Firebase handling the backend, there are no traditional API endpoints in the sense of a RESTful backend server.
+[MIT License](LICENSE) *(Optional: Add a LICENSE file with MIT License text if you want to use the MIT License)*
 
-Data is directly accessed and manipulated in the frontend using Firebase SDK methods interacting with Firebase services (Firestore, Authentication, Storage).
+---
 
-However, conceptually, you can think of data operations in terms of:
-
--   **Firestore Data Structure:**
-    -   `users/{userId}/itineraries/{itineraryId}`: Documents storing itinerary data for each user.
-    -   `userChats/{userId}/messages/{messageId}`: Collection storing chat messages for each user.
-    -   `sharedItineraries/{sharedItineraryId}`: Documents managing shared itinerary metadata and collaborators.
-    -   `users/{userId}`: Documents storing user profile information.
-
--   **Firebase Authentication:**
-    -   Handles user sign-in and session management.
-
--   **Google Maps Platform APIs & Gemini API:**
-    -   Used via JavaScript SDKs directly in the frontend for map interactions, location searches, distance calculations, and chatbot functionality.
-
-## Technology Stack
-
--   **Frontend:**
-    -   [React](https://reactjs.org/): JavaScript library for building user interfaces.
-    -   [Material UI (MUI)](https://mui.com/): React UI component library.
-    -   [React Router DOM](https://reactrouter.com/): For routing and navigation.
-    -   [React Beautiful DnD](https://github.com/atlassian/react-beautiful-dnd): For drag and drop functionality.
-    -   [React Big Calendar](https://jquense.github.io/react-big-calendar/): For calendar component.
-    -   [Recharts](https://recharts.org/en-US/): For charting and data visualization.
-    -   [Lucide React](https://lucide.dev/icons): For icons.
-    -   [Tailwind CSS](https://tailwindcss.com/): For utility-first CSS styling.
-    -   [Vite](https://vitejs.dev/):  Fast build tool and development server.
-
--   **Backend & Services:**
-    -   [Firebase](https://firebase.google.com/): Backend-as-a-Service platform providing:
-        -   Authentication
-        -   Firestore Database
-        -   Storage
-    -   [Google Maps Platform APIs](https://developers.google.com/maps): For mapping, places, and distance services.
-    -   [Google Gemini API](https://ai.google.dev/): For AI Chatbot functionality.
-
-
-
-
+**Enjoy your Foodie AI Chatbot!** 🍽️
