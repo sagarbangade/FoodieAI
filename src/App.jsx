@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import Contact from "./pages/Contact";
 import About from "./pages/About";
+import Map from "./pages/Map";
 
 function App() {
   return (
@@ -17,6 +18,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/map"
+          element={
+            <ProtectedRoute>
+              <Map />
             </ProtectedRoute>
           }
         />

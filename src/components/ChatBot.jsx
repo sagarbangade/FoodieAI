@@ -3,12 +3,21 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
+  GoogleMap, // Import GoogleMap (you might not need to render a full map, but it's needed for useJsApiLoader)
+  useJsApiLoader,
+  StandaloneSearchBox, // Import StandaloneSearchBox
+  Marker, // Import Marker if you want to use markers (optional for just location search)
+} from "@react-google-maps/api";
+import {
   X as XIcon,
   Send,
   Plus,
   Trash2,
   Mic,
   ChevronRight,
+  Trees,
+  Leaf,
+  Skull,
 } from "lucide-react";
 import Visualizer from "./Visualizer";
 import { auth } from "../firebase/firebaseConfig";
@@ -136,13 +145,19 @@ const generationConfig = {
 const CHAT_LIST_KEY = "chat-list";
 
 function ChatBot() {
+  const CORS_PROXY_URL = "https://cors-anywhere.herokuapp.com/";
   const [username, setUsername] = useState(null);
   const [userLocation, setUserLocation] = useState({
     latitude: null,
     longitude: null,
   }); // State for user location
   const [locationName, setLocationName] = useState(null);
+
+  const [dietaryPreference, setDietaryPreferenceState] = useState("Veg");
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isLocationSearchVisible, setIsLocationSearchVisible] = useState(false); // State for search box popup visibility
+  const [locationSearchInput, setLocationSearchInput] = useState(""); // State for search input value
+  const [searchResults, setSearchResults] = useState([]); // State to hold location search results
   const [currentChatId, setCurrentChatId] = useState(null);
   const [chatList, setChatList] = useState(() => {
     const storedChatList = localStorage.getItem(CHAT_LIST_KEY);
@@ -153,11 +168,36 @@ function ChatBot() {
   const messagesEndRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
   const [model, setModel] = useState(null); // State for the model
+  const { isLoaded: isMapsApiLoaded, loadError: mapsApiLoadError } =
+    useJsApiLoader({
+      // Rename isLoaded and loadError to avoid conflicts
+      id: "google-maps-script",
+      googleMapsApiKey: import.meta.env.VITE_GOOGLE_CLOUD_API_KEY,
+      libraries: ["places"], // ✅ Include "places" library
+    });
 
+  const searchBoxRef = useRef(null); // Ref for StandaloneSearchBox
+  const onSearchBoxLoad = (ref) => {
+    searchBoxRef.current = ref;
+  };
+
+  const onPlacesChanged = () => {
+    const searchBox = searchBoxRef.current;
+    if (!searchBox) return;
+
+    const places = searchBox.getPlaces();
+    if (!places || places.length === 0) return;
+
+    // Assuming you want to use the first place selected:
+    const selectedPlace = places[0];
+    console.log("Selected Place from SearchBox:", selectedPlace);
+
+    handleLocationSelection(selectedPlace); // Call your existing handleLocationSelection with the selected place
+  };
   useEffect(() => {
     const systemInstruction = `You are a Foodie AI chat bot for ${
       username ? username : "user"
-    }. Your work is to tell the user 5 nearest restaurant food item details.  ${
+    }. User's dietary preference is: ${dietaryPreference}. Your work is to tell the user 5 nearest restaurant food item details, considering their dietary preference. ${
       userLocation.latitude && userLocation.longitude
         ? `User's current location is latitude: ${userLocation.latitude}, longitude: ${userLocation.longitude}.`
         : "User location is not available."
@@ -167,11 +207,36 @@ function ChatBot() {
       systemInstruction: systemInstruction,
     });
     setModel(newModel);
-  }, [username, userLocation]); // Re-run effect when username or userLocation changes
-  async function reverseGeocode(latitude, longitude) {
+  }, [username, userLocation, dietaryPreference]);
+
+  async function reverseGeocode() {
+    let lat, lng; // Declare variables to hold latitude and longitude
+
+    if (typeof userLocation.latitude === 'function' && typeof userLocation.longitude === 'function') {
+      // Case 1: userLocation.latitude and longitude are functions (from StandaloneSearchBox PlaceResult?)
+      lat = userLocation.latitude();   // Call as functions
+      lng = userLocation.longitude();  // Call as functions
+    } else if (typeof userLocation.latitude === 'number' && typeof userLocation.longitude === 'number') {
+      // Case 2: userLocation.latitude and longitude are numbers (from Geolocation API?)
+      lat = userLocation.latitude;    // Access as direct properties
+      lng = userLocation.longitude;   // Access as direct properties
+    } else {
+      // Case 3: userLocation is in an unexpected format
+      console.warn("reverseGeocode: userLocation in unexpected format, skipping API call.");
+      setLocationName("Location not available");
+      return; // Exit early
+    }
+
+    if (typeof lat !== 'number' || typeof lng !== 'number') { // ✅ Final check: ensure lat and lng are numbers before API call
+      console.warn("reverseGeocode: Extracted lat or lng is not a number, skipping API call.");
+      setLocationName("Location not available");
+      return; // Exit if lat or lng are not valid numbers
+    }
+
+
     try {
       const apiKey = import.meta.env.VITE_GOOGLE_CLOUD_API_KEY;
-      const geocodingApiUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`;
+      const geocodingApiUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`; // Use lat and lng variables
 
       const response = await fetch(geocodingApiUrl);
       if (!response.ok) {
@@ -182,16 +247,15 @@ function ChatBot() {
       const data = await response.json();
 
       if (data.results && data.results.length > 0) {
-        // Extract the formatted address (location name) from the first result
         const formattedAddress = data.results[0].formatted_address;
         return formattedAddress;
       } else {
         console.warn("No results found from Geocoding API");
-        return "Location name not found"; // Or handle no results as needed
+        return "Location name not found";
       }
     } catch (error) {
       console.error("Error in reverseGeocode:", error);
-      return "Error fetching location name"; // Or handle error as needed
+      return "Location name unavailable";
     }
   }
   // const [recognitionResult, setRecognitionResult] = useState("");
@@ -275,29 +339,31 @@ function ChatBot() {
             longitude: position.coords.longitude,
           });
           console.log(
-            "User location fetched:",
+            "getUserCurrentLocation success:",
             position.coords.latitude,
             position.coords.longitude
-          );
+          ); // ✅ Log success
         },
         (error) => {
-          console.error("Error getting user location:", error);
+          console.error("getUserCurrentLocation error:", error); // ✅ Log error details
           // Handle location error (e.g., permission denied, location unavailable)
           // You might want to set a default location or inform the user
           console.warn(
             "Location access denied or unavailable. Chatbot will work without location context."
           );
+          setLocationName("Location access denied"); // ✅ Set a specific error message in locationName state
           // Optionally, set a default location:
           // setUserLocation({ latitude: /* default lat */, longitude: /* default long */ });
         },
         {
-          enableHighAccuracy: false, // Set to true for more accurate location (might take longer, drain battery)
-          timeout: 5000, // 5 seconds timeout to get location
-          maximumAge: 60000, // Location data can be cached for up to 60 seconds
+          enableHighAccuracy: false,
+          timeout: 5000,
+          maximumAge: 60000,
         }
       );
     } else {
       console.warn("Geolocation is not supported by this browser.");
+      setLocationName("Geolocation not supported"); // ✅ Set error message for browser support issue
       // Handle case where geolocation is not supported
     }
   };
@@ -318,19 +384,24 @@ function ChatBot() {
   }, []); // Empty dependency array means this effect runs only once on mount and unmount
   useEffect(() => {
     if (userLocation.latitude && userLocation.longitude) {
-      reverseGeocode(userLocation.latitude, userLocation.longitude)
+      // ✅ Check if BOTH latitude and longitude are valid before calling reverseGeocode
+      reverseGeocode()
         .then((locationName) => {
-          setLocationName(locationName); // Set the location name state
-          console.log("Location name:", locationName); // Log the location name
+          setLocationName(locationName);
+          console.log("Location name updated (useEffect):", locationName); // Log success in useEffect
         })
         .catch((error) => {
-          console.error("Error getting location name:", error);
-          setLocationName("Location name error"); // Set error message in locationName state
+          console.error("Error getting location name in useEffect:", error);
+          setLocationName("Location name unavailable"); // ✅ More user-friendly error message
         });
     } else {
-      setLocationName("Location not available"); // Set placeholder if no location
+      console.warn(
+        "useEffect: userLocation incomplete, skipping reverseGeocode."
+      ); // Log when skipping reverseGeocode
+      setLocationName("Location not available"); // Set a placeholder if location is incomplete
     }
-  }, [userLocation]); // Run this effect whenever userLocation changes
+  }, [userLocation]);
+
   useEffect(() => {
     if (currentChatId) {
       const storedMessages = localStorage.getItem(currentChatId);
@@ -353,6 +424,20 @@ function ChatBot() {
   useEffect(() => {
     localStorage.setItem(CHAT_LIST_KEY, JSON.stringify(chatList));
   }, [chatList]);
+  const handleLocationSelection = async (selectedLocation) => {
+    console.log(
+      "Selected Location in handleLocationSelection:",
+      selectedLocation
+    ); // <--- ADD THIS LINE
+    setLocationName(selectedLocation.formatted_address);
+    setUserLocation({
+      latitude: selectedLocation.geometry.location.lat,
+      longitude: selectedLocation.geometry.location.lng,
+    });
+    setIsLocationSearchVisible(false);
+    setLocationSearchInput("");
+    setSearchResults([]);
+  };
 
   const createNewChat = async () => {
     // Make createNewChat async to use await
@@ -404,7 +489,39 @@ function ChatBot() {
   const switchChat = (chatId) => {
     setCurrentChatId(chatId);
   };
+  const setDietaryPreference = async (preference) => {
+    // Update the dietaryPreference state
+    setDietaryPreferenceState(preference); // Rename your original state setter to avoid shadowing
 
+    let preferenceMessage = "";
+    switch (preference) {
+      case "Veg":
+        preferenceMessage = `Great! ${username} I'll focus on Vegetarian options for you. `;
+        break;
+      case "Non-veg":
+        preferenceMessage = `Killing and eating an Animals is bad ${username}, but still its personal choice to becoming an GraveYard so showing you Non-vegetarian delights! `;
+        break;
+      case "Vegan":
+        preferenceMessage = `Great! ${username}, Vegan mode activated! `;
+        break;
+      default:
+        preferenceMessage = `Dietary preference updated.`; // Fallback message
+    }
+
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { role: "assistant", content: preferenceMessage },
+    ]);
+
+    // --- Text-to-Speech for Preference Message ---
+    try {
+      const generatedAudioBlob = await textToSpeech(preferenceMessage);
+      setAudioBlob(generatedAudioBlob);
+    } catch (error) {
+      console.error("Error generating TTS for preference message:", error);
+      setAudioBlob(null);
+    }
+  };
   const [audioBlob, setAudioBlob] = useState(null); // ✅ Add state to store the audio
 
   const sendMessage = async () => {
@@ -542,20 +659,107 @@ function ChatBot() {
         </div>
       </aside>
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <Visualizer audioBlob={audioBlob} />
+        <Visualizer audioBlob={audioBlob} colour={dietaryPreference} />
       </div>
 
       <main className="flex-1 flex flex-col h-screen relative">
-        <header className="h-16 flex items-center px-4 border-b ">
-          <button
-            onClick={() => setIsSidebarVisible(true)}
-            className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md mr-2"
-          >
-            <ChevronRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-          </button>
-          <h1 className="text-lg font-semibold text-gray-800 dark:text-white">
-            Location: {locationName ? locationName : "Fetching location..."}
-          </h1>
+        <header className="h-auto sm:h-16 flex flex-col sm:flex-row items-start sm:items-center px-4 border-b justify-between relative">
+          {" "}
+          {/* Make header relative for popup positioning */}
+          {/* Left side: Sidebar toggle and Location */}
+          <div className="flex items-center mb-2 sm:mb-0 w-full sm:w-auto justify-between sm:justify-start">
+            <button
+              onClick={() => setIsSidebarVisible(true)}
+              className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md mr-2"
+            >
+              <ChevronRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </button>
+            <h1
+              onClick={() =>
+                setIsLocationSearchVisible(!isLocationSearchVisible)
+              } // Toggle search popup on click
+              className="text-base sm:text-lg font-semibold text-gray-800 dark:text-white mr-0 sm:mr-4 cursor-pointer hover:underline" // Add cursor-pointer and hover effect
+            >
+              Location: {locationName ? locationName : "Fetching..."}
+            </h1>
+          </div>
+          {/* Right side: Dietary Preference Toggles */}
+          <div className="flex space-x-1 sm:space-x-2 overflow-x-auto pb-2 sm:pb-0">
+            {/* Non-veg - Hellish */}
+            <button
+              className={`relative group px-2 sm:px-4 py-1 sm:py-2 rounded-lg focus:outline-none text-xs sm:text-sm whitespace-nowrap ${
+                dietaryPreference === "Non-veg"
+                  ? "bg-red-700 text-white shadow-md"
+                  : "bg-orange-200 dark:bg-gray-800 hover:bg-orange-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+              }`}
+              onClick={() => setDietaryPreference("Non-veg")}
+            >
+              <Skull className="w-4 h-4 sm:w-5 sm:h-5 inline-block align-middle mr-1 sm:mr-2" />
+              <span className="inline-block align-middle">Non-veg</span>
+              {dietaryPreference === "Non-veg" && (
+                <div className="absolute top-0 left-0 w-full h-full rounded-lg bg-red-800 opacity-20 group-hover:opacity-30 transition-opacity duration-200"></div>
+              )}
+            </button>
+
+            {/* Veg - Heavenly */}
+            <button
+              className={`relative group px-2 sm:px-4 py-1 sm:py-2 rounded-lg focus:outline-none text-xs sm:text-sm whitespace-nowrap ${
+                dietaryPreference === "Veg"
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "bg-blue-200 dark:bg-gray-800 hover:bg-blue-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+              }`}
+              onClick={() => setDietaryPreference("Veg")}
+            >
+              <Leaf className="w-4 h-4 sm:w-5 sm:h-5 inline-block align-middle mr-1 sm:mr-2" />
+              <span className="inline-block align-middle">Veg</span>
+              {dietaryPreference === "Veg" && (
+                <div className="absolute top-0 left-0 w-full h-full rounded-lg bg-blue-600 opacity-20 group-hover:opacity-30 transition-opacity duration-200"></div>
+              )}
+            </button>
+
+            {/* Vegan - Super Heavenly/Pure */}
+            <button
+              className={`relative group px-2 sm:px-4 py-1 sm:py-2 rounded-lg focus:outline-none text-xs sm:text-sm whitespace-nowrap ${
+                dietaryPreference === "Vegan"
+                  ? "bg-green-500 text-white shadow-md"
+                  : "bg-green-200 dark:bg-gray-800 hover:bg-green-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+              }`}
+              onClick={() => setDietaryPreference("Vegan")}
+            >
+              <Trees className="w-4 h-4 sm:w-5 sm:h-5 inline-block align-middle mr-1 sm:mr-2" />
+              <span className="inline-block align-middle">Vegan</span>
+              {dietaryPreference === "Vegan" && (
+                <div className="absolute top-0 left-0 w-full h-full rounded-lg bg-green-600 opacity-20 group-hover:opacity-30 transition-opacity duration-200"></div>
+              )}
+            </button>
+          </div>
+          {/* Location Search Popup */}
+          {isLocationSearchVisible &&
+            isMapsApiLoaded && ( // ✅ Conditionally render only when Maps API is loaded
+              <div className="absolute top-full left-0 mt-2 w-full sm:w-auto bg-white dark:bg-gray-800 rounded-md shadow-md z-40">
+                <div className="p-4">
+                  <StandaloneSearchBox
+                    onLoad={onSearchBoxLoad} // Use onSearchBoxLoad function
+                    onPlacesChanged={onPlacesChanged} // Use onPlacesChanged function
+                  >
+                    <input
+                      type="text"
+                      placeholder="Search for location..."
+                      className="w-full p-2 border rounded-md text-gray-800 dark:text-white dark:bg-gray-700"
+                      value={locationSearchInput}
+                      onChange={(e) => setLocationSearchInput(e.target.value)} // Keep input state update
+                    />
+                  </StandaloneSearchBox>
+                  {/* No need for manual searchResults UL anymore - StandaloneSearchBox handles suggestions UI */}
+                </div>
+              </div>
+            )}
+          {mapsApiLoadError && ( // ✅ Handle map load errors
+            <div className="text-red-500">
+              Error loading Google Maps API: {mapsApiLoadError.message}
+            </div>
+          )}
+          )}
         </header>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">

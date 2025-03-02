@@ -34,16 +34,15 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex justify-between items-center">
         {/* Logo/Brand Name */}
         <div className="flex items-center">
-          
           <NavLink
             to="/dashboard"
             className="text-white text-xl sm:text-2xl font-semibold hover:text-blue-400 transition duration-300"
           >
             <img
-            src="/logo.png"
-            alt="ShinobiPath Logo"
-            className="h-12 mr-2 slow-spin"
-          />
+              src="/logo.png"
+              alt="ShinobiPath Logo"
+              className="h-12 mr-2 slow-spin"
+            />
           </NavLink>
         </div>
 
@@ -60,8 +59,16 @@ const Navbar = () => {
           >
             Chat Bot
           </NavLink>
-          
-
+          <NavLink
+            to="/map"
+            className={({ isActive }) =>
+              `hover:text-blue-500 transition duration-300 ${
+                isActive ? "text-blue-400" : ""
+              }`
+            }
+          >
+            Map
+          </NavLink>
 
           {/* User Profile (Desktop) */}
           <div className="relative group">
@@ -138,9 +145,19 @@ const Navbar = () => {
               }
               onClick={toggleMobileMenu}
             >
-              Dashboard
+              Chat Bot
             </NavLink>
-
+            <NavLink
+              to="/map"
+              className={({ isActive }) =>
+                `text-white hover:text-blue-400 transition duration-300 block px-4 py-3 text-xl ${
+                  isActive ? "text-blue-400" : ""
+                }`
+              }
+              onClick={toggleMobileMenu}
+            >
+              Map
+            </NavLink>
             <button
               onClick={handleLogout}
               className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition duration-300 block mt-4 mx-4 mb-4" // Added margin
