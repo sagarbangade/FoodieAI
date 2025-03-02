@@ -155,7 +155,7 @@ const Visualizer = ({ audioBlob }) => {
     });
     
     const sphere = new THREE.Mesh(geometry, material);
-    const light = new THREE.DirectionalLight("#f54a00", 3);
+    const light = new THREE.DirectionalLight("#4db8ff", 3);
     light.position.set(0, 50, 100);
     scene.add(light);
     scene.add(sphere);

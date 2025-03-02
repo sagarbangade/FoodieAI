@@ -40,7 +40,7 @@ const LandingPageNavbar = () => {
           
           <NavLink
             to="/"
-            className="text-white text-xl sm:text-2xl lg:text-3xl font-semibold hover:text-orange-400 transition duration-300"
+            className="text-white text-xl sm:text-2xl lg:text-3xl font-semibold hover:text-blue-400 transition duration-300"
           >
             <img
             src="/logo.png"
@@ -55,8 +55,8 @@ const LandingPageNavbar = () => {
           <NavLink
             to="/"
             className={({ isActive }) =>
-              `hover:text-orange-600 transition duration-300 ${
-                isActive ? "text-orange-800" : ""
+              `hover:text-blue-600 transition duration-300 ${
+                isActive ? "text-blue-800" : ""
               }`
             }
           >
@@ -65,8 +65,8 @@ const LandingPageNavbar = () => {
           <NavLink
             to="/about"
             className={({ isActive }) =>
-              `hover:text-orange-600 transition duration-300 ${
-                isActive ? "text-orange-800" : ""
+              `hover:text-blue-600 transition duration-300 ${
+                isActive ? "text-blue-800" : ""
               }`
             }
           >
@@ -75,8 +75,8 @@ const LandingPageNavbar = () => {
           <NavLink
             to="/contact"
             className={({ isActive }) =>
-              `hover:text-orange-600 transition duration-300 ${
-                isActive ? "text-orange-800" : ""
+              `hover:text-blue-600 transition duration-300 ${
+                isActive ? "text-blue-800" : ""
               }`
             }
           >
@@ -84,7 +84,7 @@ const LandingPageNavbar = () => {
           </NavLink>
           <Link
             to="/login"
-            className="bg-orange-600 text-white px-4 sm:px-6 py-2 rounded-full hover:bg-orange-700 transition duration-300"
+            className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-full hover:bg-blue-700 transition duration-300"
           >
             Log in
           </Link>
@@ -94,7 +94,7 @@ const LandingPageNavbar = () => {
         <div className="md:hidden">
           <button
             onClick={toggleMobileMenu}
-            className="text-white hover:text-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50"
+            className="text-white hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -106,7 +106,7 @@ const LandingPageNavbar = () => {
             {/* Close Button (inside the mobile menu) */}
             <button
               onClick={toggleMobileMenu}
-              className="absolute top-4 right-4 text-white hover:text-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50"
+              className="absolute top-4 right-4 text-white hover:text-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
             >
               <X size={24} />
             </button>
@@ -115,8 +115,8 @@ const LandingPageNavbar = () => {
               <NavLink
                 to="/"
                 className={({ isActive }) =>
-                  `text-white hover:text-orange-400 transition duration-300 block px-4 py-3 text-xl ${
-                    isActive ? "text-orange-400" : ""
+                  `text-white hover:text-blue-400 transition duration-300 block px-4 py-3 text-xl ${
+                    isActive ? "text-blue-400" : ""
                   }`
                 }
                 onClick={toggleMobileMenu}
@@ -126,8 +126,8 @@ const LandingPageNavbar = () => {
               <NavLink
                 to="/about"
                 className={({ isActive }) =>
-                  `text-white hover:text-orange-400 transition duration-300 block px-4 py-3 text-xl ${
-                    isActive ? "text-orange-400" : ""
+                  `text-white hover:text-blue-400 transition duration-300 block px-4 py-3 text-xl ${
+                    isActive ? "text-blue-400" : ""
                   }`
                 }
                 onClick={toggleMobileMenu}
@@ -137,8 +137,8 @@ const LandingPageNavbar = () => {
               <NavLink
                 to="/contact"
                 className={({ isActive }) =>
-                  `text-white hover:text-orange-400 transition duration-300 block px-4 py-3 text-xl ${
-                    isActive ? "text-orange-400" : ""
+                  `text-white hover:text-blue-400 transition duration-300 block px-4 py-3 text-xl ${
+                    isActive ? "text-blue-400" : ""
                   }`
                 }
                 onClick={toggleMobileMenu}
@@ -147,7 +147,7 @@ const LandingPageNavbar = () => {
               </NavLink>
               <Link
                 to="/login"
-                className="bg-orange-600 text-white px-6 py-2 rounded-full hover:bg-orange-700 transition duration-300 block mt-2"
+                className="bg-blue-600 text-white px-6 py-2 rounded-full hover:bg-blue-700 transition duration-300 block mt-2"
                 onClick={toggleMobileMenu}
               >
                 Log in

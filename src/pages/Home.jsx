@@ -9,7 +9,7 @@ const HomePage = () => {
 
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="py-20 bg-gradient-to-br from-orange-100 to-orange-300 dark:from-gray-800 dark:to-gray-700">
+        <section className="py-20 bg-gradient-to-br from-blue-100 to-blue-300 dark:from-gray-800 dark:to-gray-700">
           <div className="container mx-auto px-4 md:px-8 lg:px-16 flex flex-col lg:flex-row items-center justify-between">
             <div className="lg:w-1/2 mb-10 lg:mb-0 text-center lg:text-left">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
@@ -22,7 +22,7 @@ const HomePage = () => {
                 all with the power of voice. No more endless scrolling, just
                 delicious recommendations.
               </p>
-              <button className="bg-orange-600 dark:bg-orange-500 hover:bg-orange-700 dark:hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-colors duration-300 flex items-center mx-auto lg:mx-0">
+              <button className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-colors duration-300 flex items-center mx-auto lg:mx-0">
                 <PlayCircleIcon className="mr-2 h-6 w-6" /> Try Voice Search
               </button>
             </div>
@@ -46,8 +46,8 @@ const HomePage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {/* Step 1 */}
               <div className="p-6 bg-white dark:bg-gray-700 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300">
-                <div className="bg-orange-200 dark:bg-orange-800 rounded-full h-12 w-12 flex items-center justify-center mx-auto mb-4">
-                  <span className="text-xl font-bold text-orange-700 dark:text-orange-200">
+                <div className="bg-blue-200 dark:bg-blue-800 rounded-full h-12 w-12 flex items-center justify-center mx-auto mb-4">
+                  <span className="text-xl font-bold text-blue-700 dark:text-blue-200">
                     1
                   </span>
                 </div>

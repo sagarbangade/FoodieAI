@@ -2,8 +2,16 @@ import { useState, useEffect, useRef } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { X as XIcon, Send, Plus, Trash2, Mic, ChevronRight  } from "lucide-react";
+import {
+  X as XIcon,
+  Send,
+  Plus,
+  Trash2,
+  Mic,
+  ChevronRight,
+} from "lucide-react";
 import Visualizer from "./Visualizer";
+import { auth } from "../firebase/firebaseConfig";
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
@@ -114,10 +122,10 @@ async function textToSpeech(text) {
   }
 }
 
-const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash-exp",
-  systemInstruction: `You are a Foodie AI chat bot whos work is to tell user 5 nearest restorent food Items details`,
-});
+// const model = genAI.getGenerativeModel({
+//   model: "gemini-2.0-flash-exp",
+//   systemInstruction: `You are a Foodie AI chat bot for ${username ? username : 'user'}. Your work is to tell the user 5 nearest restaurant food item details.  If the user asks for your name, respond with "I am a Foodie AI bot, here to help you find delicious food!".`,
+// });
 
 const generationConfig = {
   temperature: 0.7,
@@ -128,6 +136,12 @@ const generationConfig = {
 const CHAT_LIST_KEY = "chat-list";
 
 function ChatBot() {
+  const [username, setUsername] = useState(null);
+  const [userLocation, setUserLocation] = useState({
+    latitude: null,
+    longitude: null,
+  }); // State for user location
+  const [locationName, setLocationName] = useState(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [currentChatId, setCurrentChatId] = useState(null);
   const [chatList, setChatList] = useState(() => {
@@ -138,6 +152,48 @@ function ChatBot() {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef(null);
   const [isListening, setIsListening] = useState(false);
+  const [model, setModel] = useState(null); // State for the model
+
+  useEffect(() => {
+    const systemInstruction = `You are a Foodie AI chat bot for ${
+      username ? username : "user"
+    }. Your work is to tell the user 5 nearest restaurant food item details.  ${
+      userLocation.latitude && userLocation.longitude
+        ? `User's current location is latitude: ${userLocation.latitude}, longitude: ${userLocation.longitude}.`
+        : "User location is not available."
+    } If the user asks for your name, respond with "I am a Foodie AI bot, here to help you find delicious food!".`;
+    const newModel = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash-exp",
+      systemInstruction: systemInstruction,
+    });
+    setModel(newModel);
+  }, [username, userLocation]); // Re-run effect when username or userLocation changes
+  async function reverseGeocode(latitude, longitude) {
+    try {
+      const apiKey = import.meta.env.VITE_GOOGLE_CLOUD_API_KEY;
+      const geocodingApiUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`;
+
+      const response = await fetch(geocodingApiUrl);
+      if (!response.ok) {
+        const message = `Geocoding API Error: ${response.status} ${response.statusText}`;
+        console.error(message);
+        throw new Error(message);
+      }
+      const data = await response.json();
+
+      if (data.results && data.results.length > 0) {
+        // Extract the formatted address (location name) from the first result
+        const formattedAddress = data.results[0].formatted_address;
+        return formattedAddress;
+      } else {
+        console.warn("No results found from Geocoding API");
+        return "Location name not found"; // Or handle no results as needed
+      }
+    } catch (error) {
+      console.error("Error in reverseGeocode:", error);
+      return "Error fetching location name"; // Or handle error as needed
+    }
+  }
   // const [recognitionResult, setRecognitionResult] = useState("");
   const mediaRecorderRef = useRef(null);
   // Start microphone recording
@@ -209,7 +265,72 @@ function ChatBot() {
       setCurrentChatId(parsedChatList[0].id);
     }
   }, []);
+  // Function to get user's current location
+  const getUserCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+          console.log(
+            "User location fetched:",
+            position.coords.latitude,
+            position.coords.longitude
+          );
+        },
+        (error) => {
+          console.error("Error getting user location:", error);
+          // Handle location error (e.g., permission denied, location unavailable)
+          // You might want to set a default location or inform the user
+          console.warn(
+            "Location access denied or unavailable. Chatbot will work without location context."
+          );
+          // Optionally, set a default location:
+          // setUserLocation({ latitude: /* default lat */, longitude: /* default long */ });
+        },
+        {
+          enableHighAccuracy: false, // Set to true for more accurate location (might take longer, drain battery)
+          timeout: 5000, // 5 seconds timeout to get location
+          maximumAge: 60000, // Location data can be cached for up to 60 seconds
+        }
+      );
+    } else {
+      console.warn("Geolocation is not supported by this browser.");
+      // Handle case where geolocation is not supported
+    }
+  };
+  useEffect(() => {
+    getUserCurrentLocation();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        // User is signed in, get the display name
+        setUsername(user.displayName); // Or user.email, or however you want to identify the user
+      } else {
+        // User is signed out
+        setUsername(null); // Clear username when logged out
+      }
+    });
 
+    // Unsubscribe from the observer when the component unmounts
+    return () => unsubscribe();
+  }, []); // Empty dependency array means this effect runs only once on mount and unmount
+  useEffect(() => {
+    if (userLocation.latitude && userLocation.longitude) {
+      reverseGeocode(userLocation.latitude, userLocation.longitude)
+        .then((locationName) => {
+          setLocationName(locationName); // Set the location name state
+          console.log("Location name:", locationName); // Log the location name
+        })
+        .catch((error) => {
+          console.error("Error getting location name:", error);
+          setLocationName("Location name error"); // Set error message in locationName state
+        });
+    } else {
+      setLocationName("Location not available"); // Set placeholder if no location
+    }
+  }, [userLocation]); // Run this effect whenever userLocation changes
   useEffect(() => {
     if (currentChatId) {
       const storedMessages = localStorage.getItem(currentChatId);
@@ -233,16 +354,34 @@ function ChatBot() {
     localStorage.setItem(CHAT_LIST_KEY, JSON.stringify(chatList));
   }, [chatList]);
 
-  const createNewChat = () => {
+  const createNewChat = async () => {
+    // Make createNewChat async to use await
     const now = new Date();
     const formattedDateTime = now.toLocaleString();
     const newChatId = `chat-${Date.now()}`;
     const newChat = { id: newChatId, name: formattedDateTime };
     setChatList([...chatList, newChat]);
     setCurrentChatId(newChatId);
+
+    // Construct the greeting message, personalizing with username if available
+
+    const greetingMessage = username
+      ? `Hello ${username}! I'm your Foodie AI assistant.  Hungry? I can help you find the top 5 most popular and delicious items at restaurants in your vicinity.  Just ask me for recommendations!`
+      : "Hello! I'm your Foodie AI assistant.  Hungry? I can help you find the top 5 most popular and delicious items at restaurants in your vicinity.  Just ask me for recommendations!";
+
     setMessages([
-      { role: "assistant", content: "Hello! How can I assist you today?" },
+      { role: "assistant", content: greetingMessage }, // Set greeting as initial message
     ]);
+
+    // --- Text-to-Speech for Greeting ---
+    try {
+      const generatedAudioBlob = await textToSpeech(greetingMessage); // Call TTS
+      setAudioBlob(generatedAudioBlob); // Update audioBlob state
+    } catch (error) {
+      console.error("Error generating TTS for greeting:", error);
+      // Handle error appropriately, maybe set audioBlob to null or a default silent blob
+      setAudioBlob(null); // Or handle error as needed
+    }
   };
 
   const deleteChat = (chatId, e) => {
@@ -360,7 +499,7 @@ function ChatBot() {
             </div>
             <button
               onClick={createNewChat}
-              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-200/30 dark:bg-blue-400/30 backdrop-blur-md hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-200/10 dark:bg-blue-400/10 backdrop-blur-md hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               <Plus className="w-5 h-5" />
               New Chat
@@ -374,7 +513,7 @@ function ChatBot() {
                   <div
                     className={`flex items-center justify-between w-full px-4 py-3 rounded-lg transition-colors ${
                       chat.id === currentChatId
-                        ? "bg-blue-100 dark:bg-blue-900/50"
+                        ? "bg-blue-100 dark:bg-blue-900/20"
                         : "hover:bg-gray-100 dark:hover:bg-gray-700"
                     }`}
                   >
@@ -412,9 +551,13 @@ function ChatBot() {
             onClick={() => setIsSidebarVisible(true)}
             className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md mr-2"
           >
-            <ChevronRight  className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            <ChevronRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
           </button>
+          <h1 className="text-lg font-semibold text-gray-800 dark:text-white">
+            Location: {locationName ? locationName : "Fetching location..."}
+          </h1>
         </header>
+
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {messages.map((msg, index) => (
             <div
@@ -427,7 +570,7 @@ function ChatBot() {
                 className={`max-w-[80%] lg:max-w-[70%] rounded-2xl px-4 py-2 ${
                   msg.role === "user"
                     ? "bg-gray-200/20 dark:bg-gray-800/20  text-gray-800 dark:text-white rounded-bl-none"
-                    : "bg-gray-200/10 dark:bg-gray-700/10  text-gray-800 dark:text-white rounded-bl-none"
+                    : "bg-gray-200/25 dark:bg-gray-700/25  text-gray-800 dark:text-white rounded-bl-none"
                 }`}
               >
                 <ReactMarkdown

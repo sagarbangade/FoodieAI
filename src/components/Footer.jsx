@@ -13,7 +13,7 @@ const Footer = () => {
               
               <Link
                 to="/"
-                className="text-white text-xl sm:text-2xl font-semibold hover:text-orange-400 transition duration-300"
+                className="text-white text-xl sm:text-2xl font-semibold hover:text-blue-400 transition duration-300"
               >
                 <img
                 src="/logo.png"
@@ -29,25 +29,25 @@ const Footer = () => {
             <div className="flex mt-4 space-x-4">
               <a
                 href="#"
-                className="text-gray-400 hover:text-orange-500 transition-colors"
+                className="text-gray-400 hover:text-blue-500 transition-colors"
               >
                 <Facebook size={20} />
               </a>
               <a
                 href="#"
-                className="text-gray-400 hover:text-orange-500 transition-colors"
+                className="text-gray-400 hover:text-blue-500 transition-colors"
               >
                 <Twitter size={20} />
               </a>
               <a
                 href="#"
-                className="text-gray-400 hover:text-orange-500 transition-colors"
+                className="text-gray-400 hover:text-blue-500 transition-colors"
               >
                 <Instagram size={20} />
               </a>
               <a
                 href="#"
-                className="text-gray-400 hover:text-orange-500 transition-colors"
+                className="text-gray-400 hover:text-blue-500 transition-colors"
               >
                 <Linkedin size={20} />
               </a>
@@ -57,7 +57,7 @@ const Footer = () => {
           {/* Footer Links */}
           {footerLinks.map((section, index) => (
             <div key={index}>
-              <h4 className="text-orange-400 font-semibold mb-4 text-base sm:text-lg">
+              <h4 className="text-blue-400 font-semibold mb-4 text-base sm:text-lg">
                 {section.title}
               </h4>
               <ul className="space-y-2">
@@ -65,7 +65,7 @@ const Footer = () => {
                   <li key={i}>
                     <Link
                       to={link.url} // Use link.url for dynamic routes
-                      className="text-sm sm:text-base hover:text-orange-500 transition-colors"
+                      className="text-sm sm:text-base hover:text-blue-500 transition-colors"
                     >
                       {link.text}
                     </Link>
@@ -78,7 +78,7 @@ const Footer = () => {
 
         {/* Copyright */}
         <div className="mt-8 sm:mt-10 border-t border-gray-700 pt-4 sm:pt-6 text-center text-sm sm:text-base">
-          © {new Date().getFullYear()} ShinobiPath. All rights reserved.
+          © {new Date().getFullYear()} Foodie AI. All rights reserved.
         </div>
       </div>
     </footer>

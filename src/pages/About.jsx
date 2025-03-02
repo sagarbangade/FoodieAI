@@ -24,7 +24,7 @@ const About = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {/* Benefit 1 */}
               <div className="p-6 bg-white dark:bg-gray-700 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 text-center">
-                <ChefHatIcon className="h-10 w-10 text-orange-500 mx-auto mb-4" />
+                <ChefHatIcon className="h-10 w-10 text-blue-500 mx-auto mb-4" />
                 <h4 className="text-xl font-semibold mb-2">Curated Recommendations</h4>
                 <p className="text-gray-700 dark:text-gray-300">
                   Get hand-picked top 5 dishes, saving you time and ensuring a great dining experience.

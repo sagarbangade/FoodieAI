@@ -37,7 +37,7 @@ const Navbar = () => {
           
           <NavLink
             to="/dashboard"
-            className="text-white text-xl sm:text-2xl font-semibold hover:text-orange-400 transition duration-300"
+            className="text-white text-xl sm:text-2xl font-semibold hover:text-blue-400 transition duration-300"
           >
             <img
             src="/logo.png"
@@ -53,12 +53,12 @@ const Navbar = () => {
           <NavLink
             to="/dashboard"
             className={({ isActive }) =>
-              `hover:text-orange-500 transition duration-300 ${
-                isActive ? "text-orange-400" : ""
+              `hover:text-blue-500 transition duration-300 ${
+                isActive ? "text-blue-400" : ""
               }`
             }
           >
-            Dashboard
+            Chat Bot
           </NavLink>
           
 
@@ -67,7 +67,7 @@ const Navbar = () => {
           <div className="relative group">
             <button
               onClick={openProfileModal}
-              className="flex items-center hover:text-orange-400 transition duration-300"
+              className="flex items-center hover:text-blue-400 transition duration-300"
             >
               {user?.photoURL ? (
                 <img
@@ -83,7 +83,7 @@ const Navbar = () => {
           </div>
           <button
             onClick={handleLogout}
-            className="bg-orange-600 text-white px-4 py-2 rounded-full hover:bg-orange-700 transition duration-300"
+            className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition duration-300"
           >
             Logout
           </button>
@@ -93,7 +93,7 @@ const Navbar = () => {
         <div className="md:hidden flex items-center">
           <button
             onClick={toggleMobileMenu}
-            className="text-white hover:text-orange-400 focus:outline-none"
+            className="text-white hover:text-blue-400 focus:outline-none"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -106,7 +106,7 @@ const Navbar = () => {
           <div className="py-1 pl-1 pr-4 flex justify-between">
             <button
               onClick={openProfileModal}
-              className="text-white hover:text-orange-400 transition duration-300 block px-4 py-3 text-xl flex items-center"
+              className="text-white hover:text-blue-400 transition duration-300 block px-4 py-3 text-xl flex items-center"
             >
               {user?.photoURL ? (
                 <img
@@ -121,7 +121,7 @@ const Navbar = () => {
             </button>
             <button
               onClick={toggleMobileMenu}
-              className="text-white hover:text-orange-400 focus:outline-none"
+              className="text-white hover:text-blue-400 focus:outline-none"
             >
               <X size={24} />
             </button>
@@ -132,8 +132,8 @@ const Navbar = () => {
             <NavLink
               to="/dashboard"
               className={({ isActive }) =>
-                `text-white hover:text-orange-400 transition duration-300 block px-4 py-3 text-xl ${
-                  isActive ? "text-orange-400" : ""
+                `text-white hover:text-blue-400 transition duration-300 block px-4 py-3 text-xl ${
+                  isActive ? "text-blue-400" : ""
                 }`
               }
               onClick={toggleMobileMenu}
@@ -143,7 +143,7 @@ const Navbar = () => {
 
             <button
               onClick={handleLogout}
-              className="bg-orange-600 text-white px-4 py-2 rounded-full hover:bg-orange-700 transition duration-300 block mt-4 mx-4 mb-4" // Added margin
+              className="bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition duration-300 block mt-4 mx-4 mb-4" // Added margin
             >
               Logout
             </button>

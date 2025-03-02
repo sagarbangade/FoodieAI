@@ -166,7 +166,7 @@ const Login = () => {
         <div className="bg-black bg-opacity-70 p-8 rounded-3xl shadow-2xl w-full max-w-md backdrop-blur-md">
           {" "}
           {/* Added backdrop-blur-md */}
-          <h1 className="text-3xl font-bold mb-6 text-center gradient-text bg-gradient-to-r from-orange-500 via-yellow-400 to-orange-600">
+          <h1 className="text-3xl font-bold mb-6 text-center gradient-text bg-gradient-to-r from-blue-500 via-yellow-400 to-blue-600">
             Login to Continue
           </h1>
           <p className="text-gray-400 mb-4 text-center">
@@ -174,7 +174,7 @@ const Login = () => {
           </p>
           <button
             onClick={signInWithGoogle}
-            className="w-full bg-gradient-to-r from-orange-600 to-yellow-500 hover:from-yellow-500 hover:to-orange-600 text-white font-medium py-3 px-6 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50 transition-all duration-300"
+            className="w-full bg-gradient-to-r from-blue-600 to-yellow-500 hover:from-yellow-500 hover:to-blue-600 text-white font-medium py-3 px-6 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all duration-300"
           >
             <div className="flex items-center justify-center">
               <img
