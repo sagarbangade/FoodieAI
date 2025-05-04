@@ -1,4 +1,4 @@
-# Foodie AI Chatbot 🍔🍕🌮
+# Foodie AI Chatbot 🍔🍕
 
 ## Demo Video:  https://youtu.be/SmE4yztsglg
 ## Demo Website (Live): https://foodie-ai-beta.vercel.app/
