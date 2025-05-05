@@ -3,6 +3,7 @@
 ## Demo Video:  https://youtu.be/SmE4yztsglg
 ## Demo Website (Live): https://foodie-ai-beta.vercel.app/
 
+
 <!-- Replace the image link above with a thumbnail image for your demo video, and replace LINK-TO-YOUR-DEMO-VIDEO with the actual YouTube or video platform link.
      Replace LINK-TO-YOUR-DEMO-WEBSITE with the link to your deployed website (if you have one).
      If you don't have a demo video or website yet, you can leave these placeholders and add them later. -->
