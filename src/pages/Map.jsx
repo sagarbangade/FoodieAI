@@ -1,143 +1,66 @@
-import { useCallback, useState, useRef } from "react";
-import {
-  GoogleMap,
-  useJsApiLoader,
-  StandaloneSearchBox,
-  Marker,
-} from "@react-google-maps/api";
+import { useEffect, useState } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 
-const mapContainerStyle = {
-  height: "100vh",
-  width: "100%",
-};
-
-const center = {
-  lat: 40.75378,
-  lng: -73.55658,
-};
-
-const zoom = 10;
-
 export default function Map() {
-  const { isLoaded, loadError } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_CLOUD_API_KEY, // **REPLACE WITH YOUR API KEY**
-    libraries: ["places"],
-  });
+  const [coords, setCoords] = useState({ lat: null, lng: null });
+  const [status, setStatus] = useState("Idle");
 
-  const searchBoxRef = useRef(null);
-  const [map, setMap] = useState(null);
-  const [markers, setMarkers] = useState([]);
-
-  const onSearchBoxLoad = (ref) => {
-    searchBoxRef.current = ref;
-  };
-
-  const onPlacesChanged = () => {
-    const searchBox = searchBoxRef.current;
-    if (!searchBox) return;
-
-    const places = searchBox.getPlaces();
-    if (!places || places.length === 0) return;
-
-    const bounds = new window.google.maps.LatLngBounds();
-    places.forEach((place) => {
-      if (place.geometry && place.geometry.viewport) {
-        const viewport = place.geometry.viewport;
-        bounds.extend(viewport.getNorthEast());
-        bounds.extend(viewport.getSouthWest());
-      } else if (place.geometry && place.geometry.location) {
-        bounds.extend(place.geometry.location);
-      }
-    });
-
-    if (map) {
-      map.fitBounds(bounds);
+  const getLocation = () => {
+    if (!navigator.geolocation) {
+      setStatus("Geolocation not supported");
+      return;
     }
-    console.log(bounds);
-  };
-  const onMapClick = useCallback((event) => {
-    // New function for map clicks
-    setMarkers((current) => [
-      ...current,
-      {
-        // Add new marker to markers array
-        lat: event.latLng.lat(),
-        lng: event.latLng.lng(),
-        time: new Date(), // Optional: You can add timestamp for ordering
+    setStatus("Fetching location...");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        setStatus("Location acquired");
       },
-    ]);
-  }, []);
-  const onMapLoad = useCallback(function callback(map) {
-    setMap(map);
-    console.log(map);
-  }, []);
-
-  const onClick = (e) => {
-    console.log("onClick args: ", e, { map });
-    console.log(e.latLng.lat() + ", " + e.latLng.lng());
+      (err) => {
+        console.error("Geolocation error", err);
+        setStatus("Location access denied or unavailable");
+      },
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 }
+    );
   };
 
-  if (loadError) {
-    return <div>Error loading Google Maps API: {loadError.message}</div>;
-  }
-
-  if (!isLoaded) {
-    return <div>Map Loading...</div>;
-  }
+  useEffect(() => {
+    getLocation();
+  }, []);
 
   return (
     <div>
       <Navbar />
-      <div className="App">
-        {isLoaded && (
-          <GoogleMap
-            mapContainerStyle={mapContainerStyle}
-            zoom={zoom}
-            center={center}
-            onLoad={onMapLoad}
-            onClick={onClick}
+      <div className="max-w-3xl mx-auto p-6">
+        <h1 className="text-2xl font-semibold mb-4">Your Location</h1>
+        <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4 bg-white dark:bg-gray-800">
+          <p className="mb-2 text-gray-800 dark:text-gray-100">
+            Status: {status}
+          </p>
+          {coords.lat && coords.lng ? (
+            <div className="space-y-1 text-gray-800 dark:text-gray-100">
+              <div>Latitude: {coords.lat.toFixed(6)}</div>
+              <div>Longitude: {coords.lng.toFixed(6)}</div>
+              <a
+                className="text-blue-600 underline"
+                href={`https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=16/${coords.lat}/${coords.lng}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open in OpenStreetMap
+              </a>
+            </div>
+          ) : (
+            <div className="text-gray-500">No coordinates yet.</div>
+          )}
+          <button
+            onClick={getLocation}
+            className="mt-4 px-3 py-2 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
           >
-            <StandaloneSearchBox
-              onLoad={onSearchBoxLoad}
-              onPlacesChanged={onPlacesChanged}
-            >
-              <input
-                type="text"
-                placeholder="Enter your location"
-                style={{
-                  boxSizing: `border-box`,
-                  border: `1px solid transparent`,
-                  width: `240px`,
-                  height: `32px`,
-                  padding: `0 12px`,
-                  borderRadius: `3px`,
-                  boxShadow: `0 2px 6px rgba(0, 0, 0, 0.3)`,
-                  backgroundColor: "white",
-                  fontSize: `14px`,
-                  outline: `none`,
-                  textOverflow: `ellipses`,
-                  position: "absolute",
-                  left: "50%",
-                  marginLeft: "-120px",
-                }}
-              />
-            </StandaloneSearchBox>
-            {markers.map(
-              (
-                marker // Render markers on the map
-              ) => (
-                <Marker
-                  key={`${marker.lat}-${marker.lng}-${marker.time.getTime()}`} // Unique key for each marker
-                  position={{ lat: marker.lat, lng: marker.lng }}
-                  // You can add icon, title, etc., to the Marker component
-                />
-              )
-            )}
-          </GoogleMap>
-        )}
+            Refresh Location
+          </button>
+        </div>
       </div>
       <Footer />
     </div>
