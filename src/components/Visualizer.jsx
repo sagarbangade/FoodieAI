@@ -6,6 +6,8 @@ const Visualizer = ({ audioBlob, colour, isSpeaking }) => {
   const visualizerRef = useRef(null);
   const audioRef = useRef(null);
   const sceneRef = useRef(null);
+  const sphereRef = useRef(null);
+  const lightRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const sourceRef = useRef(null);
@@ -19,6 +21,26 @@ const Visualizer = ({ audioBlob, colour, isSpeaking }) => {
       setColor("#009dff");
     } else if (colour == "Vegan") {
       setColor("#00ff1e");
+    }
+    // Immediately update existing material/light if present
+    if (sphereRef.current && sphereRef.current.material) {
+      sphereRef.current.material.color = new THREE.Color(
+        colour == "Non-veg"
+          ? "#ff0026"
+          : colour == "Veg"
+          ? "#009dff"
+          : "#00ff1e"
+      );
+      sphereRef.current.material.needsUpdate = true;
+    }
+    if (lightRef.current) {
+      lightRef.current.color = new THREE.Color(
+        colour == "Non-veg"
+          ? "#ff0026"
+          : colour == "Veg"
+          ? "#009dff"
+          : "#00ff1e"
+      );
     }
   }, [colour]);
   // Effect for initial script loading
@@ -131,6 +153,8 @@ const Visualizer = ({ audioBlob, colour, isSpeaking }) => {
       // Clean up Three.js resources
       sceneRef.current = null;
     }
+    sphereRef.current = null;
+    lightRef.current = null;
   };
 
   const startAttemptsRef = useRef(0);
@@ -207,14 +231,16 @@ const Visualizer = ({ audioBlob, colour, isSpeaking }) => {
     // Create geometry - v102 uses old style Geometry
     const geometry = new THREE.IcosahedronGeometry(20, 5);
     const material = new THREE.MeshLambertMaterial({
-      color: "#a7acaf",
+      color: color,
       wireframe: true,
     });
 
     const sphere = new THREE.Mesh(geometry, material);
+    sphereRef.current = sphere;
 
     const light = new THREE.DirectionalLight(color, 3);
     light.position.set(0, 50, 100);
+    lightRef.current = light;
     scene.add(light);
     scene.add(sphere);
 

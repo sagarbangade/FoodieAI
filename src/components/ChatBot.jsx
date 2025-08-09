@@ -598,6 +598,48 @@ Tone guidance:
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   className="prose dark:prose-invert max-w-none"
+                  components={{
+                    a: ({ children, ...props }) => {
+                      const label = Array.isArray(children)
+                        ? children
+                            .map((c) => (typeof c === "string" ? c : ""))
+                            .join("")
+                        : String(children ?? "");
+                      const isMapsButton = label
+                        .toLowerCase()
+                        .includes("open in google maps");
+                      if (isMapsButton) {
+                        const buttonClasses =
+                          "inline-flex items-center px-3 py-1.5 rounded-md bg-blue-600 text-white no-underline hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm";
+                        return (
+                          <a
+                            {...props}
+                            className={buttonClasses}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {children}
+                          </a>
+                        );
+                      }
+                      return (
+                        <a
+                          {...props}
+                          className="text-blue-600 underline"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {children}
+                        </a>
+                      );
+                    },
+                    ol: ({ ...props }) => (
+                      <ol {...props} className="list-decimal pl-6 space-y-4" />
+                    ),
+                    ul: ({ ...props }) => (
+                      <ul {...props} className="list-disc pl-6 space-y-3" />
+                    ),
+                  }}
                 >
                   {msg.content}
                 </ReactMarkdown>
