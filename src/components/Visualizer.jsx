@@ -1,9 +1,13 @@
+/* global THREE, SimplexNoise */
 import { useEffect, useRef, useState } from "react";
+import PropTypes from "prop-types";
 
-const Visualizer = ({ audioBlob, colour }) => {
+const Visualizer = ({ audioBlob, colour, isSpeaking }) => {
   const visualizerRef = useRef(null);
   const audioRef = useRef(null);
   const sceneRef = useRef(null);
+  const sphereRef = useRef(null);
+  const lightRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const sourceRef = useRef(null);
@@ -17,6 +21,26 @@ const Visualizer = ({ audioBlob, colour }) => {
       setColor("#009dff");
     } else if (colour == "Vegan") {
       setColor("#00ff1e");
+    }
+    // Immediately update existing material/light if present
+    if (sphereRef.current && sphereRef.current.material) {
+      sphereRef.current.material.color = new THREE.Color(
+        colour == "Non-veg"
+          ? "#ff0026"
+          : colour == "Veg"
+          ? "#009dff"
+          : "#00ff1e"
+      );
+      sphereRef.current.material.needsUpdate = true;
+    }
+    if (lightRef.current) {
+      lightRef.current.color = new THREE.Color(
+        colour == "Non-veg"
+          ? "#ff0026"
+          : colour == "Veg"
+          ? "#009dff"
+          : "#00ff1e"
+      );
     }
   }, [colour]);
   // Effect for initial script loading
@@ -85,29 +109,37 @@ const Visualizer = ({ audioBlob, colour }) => {
 
   // Effect for handling audioBlob changes
   useEffect(() => {
-    if (!audioBlob) return;
+    if (audioBlob) {
+      // Clean up previous audio resources
+      cleanupAudio();
+      clearScene();
+      // Create new audio element
+      audioRef.current = new Audio();
+      const audioURL = URL.createObjectURL(audioBlob);
+      audioRef.current.src = audioURL;
 
-    // Clean up previous audio resources
-    cleanupAudio();
-    clearScene();
+      // Start visualization with new audio
+      startVis();
 
-    // Create new audio element
-    audioRef.current = new Audio();
-    const audioURL = URL.createObjectURL(audioBlob);
-    audioRef.current.src = audioURL;
-
-    // Start visualization with new audio
-    startVis();
-
-    audioRef.current.play();
-    audioRef.current.onended = () => {
-      URL.revokeObjectURL(audioURL);
-    };
+      audioRef.current.play();
+      audioRef.current.onended = () => {
+        URL.revokeObjectURL(audioURL);
+      };
+    } else if (isSpeaking) {
+      // While speaking via speechSynthesis, run idle visualizer
+      clearScene();
+      startVis();
+    } else {
+      // Not speaking and no audio: show a very light idle visualization
+      clearScene();
+      startVis();
+    }
 
     return () => {
       cleanupAudio();
     };
-  }, [audioBlob]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [audioBlob, isSpeaking]);
 
   const clearScene = () => {
     if (!visualizerRef.current) return;
@@ -121,25 +153,60 @@ const Visualizer = ({ audioBlob, colour }) => {
       // Clean up Three.js resources
       sceneRef.current = null;
     }
+    sphereRef.current = null;
+    lightRef.current = null;
   };
 
+  const startAttemptsRef = useRef(0);
+
   const startVis = () => {
-    if (!audioRef.current || !visualizerRef.current) return;
+    if (!visualizerRef.current) return;
+    // Ensure external libs are loaded (THREE and SimplexNoise are loaded via script tags)
+    const libsReady =
+      typeof window !== "undefined" && window.THREE && window.SimplexNoise;
+    if (!libsReady) {
+      if (startAttemptsRef.current < 50) {
+        startAttemptsRef.current += 1;
+        setTimeout(startVis, 100);
+      }
+      return;
+    }
 
     const noise = new SimplexNoise();
     const audio = audioRef.current;
 
-    // Create new AudioContext
-    audioContextRef.current = new AudioContext();
+    // Create AudioContext if not exists
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext ||
+        window.webkitAudioContext)();
+    }
     const context = audioContextRef.current;
 
-    // Create and connect audio nodes
-    sourceRef.current = context.createMediaElementSource(audio);
-    analyserRef.current = context.createAnalyser();
-    sourceRef.current.connect(analyserRef.current);
-    analyserRef.current.connect(context.destination);
-    analyserRef.current.fftSize = 512;
-    const bufferLength = analyserRef.current.frequencyBinCount;
+    if (audio && !analyserRef.current) {
+      // Create and connect audio nodes from audio element
+      sourceRef.current = context.createMediaElementSource(audio);
+      analyserRef.current = context.createAnalyser();
+      sourceRef.current.connect(analyserRef.current);
+      analyserRef.current.connect(context.destination);
+      analyserRef.current.fftSize = 512;
+    } else if (!audio && !analyserRef.current) {
+      // Create an analyser fed by a tiny internal oscillator for idle/speaking state
+      const osc = context.createOscillator();
+      const gain = context.createGain();
+      const analyser = context.createAnalyser();
+      osc.type = "triangle";
+      osc.frequency.value = 180;
+      gain.gain.value = isSpeaking ? 0.12 : 0.05;
+      osc.connect(gain);
+      gain.connect(analyser);
+      analyser.fftSize = 512;
+      osc.start();
+      analyserRef.current = analyser;
+      sourceRef.current = gain; // keep reference for cleanup
+    }
+    const bufferLength = analyserRef.current
+      ? analyserRef.current.frequencyBinCount
+      : 256;
     const dataArray = new Uint8Array(bufferLength);
 
     // Set up THREE.js scene
@@ -164,14 +231,16 @@ const Visualizer = ({ audioBlob, colour }) => {
     // Create geometry - v102 uses old style Geometry
     const geometry = new THREE.IcosahedronGeometry(20, 5);
     const material = new THREE.MeshLambertMaterial({
-      color: "#a7acaf",
+      color: color,
       wireframe: true,
     });
 
     const sphere = new THREE.Mesh(geometry, material);
+    sphereRef.current = sphere;
 
     const light = new THREE.DirectionalLight(color, 3);
     light.position.set(0, 50, 100);
+    lightRef.current = light;
     scene.add(light);
     scene.add(sphere);
 
@@ -183,33 +252,62 @@ const Visualizer = ({ audioBlob, colour }) => {
 
     window.addEventListener("resize", handleResize);
 
+    // Persistent smoothing state for seamless transitions
+    let smoothedLowerMaxFr = 0.2;
+    let smoothedUpperAvgFr = 0.2;
+    let intensityMul = 1; // will smoothly ramp between 1 (idle) and 1.2 (playing)
+
     function render() {
-      if (!analyserRef.current) return;
+      let lowerMaxFr = 0.2;
+      let upperAvgFr = 0.2;
+      if (analyserRef.current) {
+        analyserRef.current.getByteFrequencyData(dataArray);
+        const lowerHalf = dataArray.slice(0, dataArray.length / 2 - 1);
+        const upperHalf = dataArray.slice(
+          dataArray.length / 2 - 1,
+          dataArray.length - 1
+        );
+        const lowerMax = lowerHalf.length ? Math.max(...lowerHalf) : 0;
+        const upperAvg = upperHalf.length
+          ? upperHalf.reduce((sum, b) => sum + b, 0) / upperHalf.length
+          : 0;
+        lowerMaxFr = lowerHalf.length ? lowerMax / lowerHalf.length : 0.2;
+        upperAvgFr = upperHalf.length ? upperAvg / upperHalf.length : 0.2;
+      }
+      // Add expressive talking modulation while TTS is speaking (no audio blob)
+      if (!audioRef.current && isSpeaking) {
+        const t = performance.now() * 0.002;
+        lowerMaxFr += 0.15 * (0.5 + 0.5 * Math.sin(t * 2.1));
+        upperAvgFr += 0.12 * (0.5 + 0.5 * Math.cos(t * 2.7));
+        lowerMaxFr = Math.max(0.1, Math.min(0.9, lowerMaxFr));
+        upperAvgFr = Math.max(0.1, Math.min(0.9, upperAvgFr));
+      }
 
-      analyserRef.current.getByteFrequencyData(dataArray);
-
-      const lowerHalf = dataArray.slice(0, dataArray.length / 2 - 1);
-      const upperHalf = dataArray.slice(
-        dataArray.length / 2 - 1,
-        dataArray.length - 1
+      // Detect if actual audio is playing
+      const isAudioPlaying = !!(
+        audioRef.current &&
+        !audioRef.current.paused &&
+        !audioRef.current.ended &&
+        audioRef.current.currentTime > 0
       );
 
-      const lowerMax = Math.max(...lowerHalf);
-      const upperAvg =
-        upperHalf.reduce((sum, b) => sum + b, 0) / upperHalf.length;
+      // Smoothly ease spectrum values to avoid abrupt jumps
+      const smoothing = 0.12;
+      smoothedLowerMaxFr += (lowerMaxFr - smoothedLowerMaxFr) * smoothing;
+      smoothedUpperAvgFr += (upperAvgFr - smoothedUpperAvgFr) * smoothing;
 
-      const lowerMaxFr = lowerMax / lowerHalf.length;
-      const upperAvgFr = upperAvg / upperHalf.length;
+      // Smoothly ramp intensity when audio starts/stops for a seamless transition
+      const targetIntensity = isAudioPlaying ? 1.2 : 1;
+      intensityMul += (targetIntensity - intensityMul) * 0.08;
 
-      sphere.rotation.x += 0.001;
-      sphere.rotation.y += 0.003;
-      sphere.rotation.z += 0.005;
+      sphere.rotation.x += 0.001 * intensityMul;
+      sphere.rotation.y += 0.003 * intensityMul;
+      sphere.rotation.z += 0.005 * intensityMul;
 
-      WarpSphere(
-        sphere,
-        modulate(Math.pow(lowerMaxFr, 0.8), 0, 1, 0, 8),
-        modulate(upperAvgFr, 0, 1, 0, 4)
-      );
+      const bassArg = modulate(Math.pow(smoothedLowerMaxFr, 0.8), 0, 1, 0, 8);
+      let treArg = modulate(smoothedUpperAvgFr, 0, 1, 0, 4) * intensityMul;
+
+      WarpSphere(sphere, bassArg, treArg);
 
       animationRef.current = requestAnimationFrame(render);
       renderer.render(scene, camera);
@@ -253,6 +351,8 @@ const Visualizer = ({ audioBlob, colour }) => {
       return outMin + fr * delta;
     }
 
+    // Reset attempts on successful start
+    startAttemptsRef.current = 0;
     // Start animation
     render();
 
@@ -277,3 +377,8 @@ const Visualizer = ({ audioBlob, colour }) => {
 };
 
 export default Visualizer;
+Visualizer.propTypes = {
+  audioBlob: PropTypes.any,
+  colour: PropTypes.string,
+  isSpeaking: PropTypes.bool,
+};
